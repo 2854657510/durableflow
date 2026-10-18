@@ -2,6 +2,8 @@
 
 > 轻量级持久化工作流引擎：PostgreSQL 存状态，Redis 做租约/缓存，Worker 崩溃可恢复，重试/幂等/人工审批可配置，LLM 只是其中一种节点。
 
+[![CI](https://github.com/2854657510/durableflow/actions/workflows/ci.yml/badge.svg)](https://github.com/2854657510/durableflow/actions/workflows/ci.yml)
+
 ![DurableFlow UI](docs/ui.png)
 
 这个项目不是“又一个 RAG 问答 Demo”，而是用来回答面试里的那类问题：

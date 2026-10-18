@@ -19,6 +19,7 @@
 | UI | 已启动：http://127.0.0.1:8000/ui |
 | Worker | 已启动（后台），会处理新运行 |
 | Prometheus 指标 | http://127.0.0.1:8000/metrics |
+| GitHub | 私有仓库：https://github.com/2854657510/durableflow（CI 已绿，待整理后公开） |
 | Redis | 本机未启动；API 自动降级到进程内限流，任务不受影响 |
 
 > 如果 API/Worker 的后台进程被关掉，按第 3 节重新启动即可。
@@ -37,6 +38,7 @@
 | `python scripts/benchmark.py --runs 40 --workers 3` | 40/40 成功，135.32 步骤/秒，P50 0.755s，P95 0.796s |
 | `python scripts/compare_versions.py --name demo_pipeline --a 1 --b 2 --runs 12 --workers 2` | A/B 对比输出成功率、P95、token、成本 |
 | `alembic upgrade head` | 在 `durableflow_migrate` 库验证通过 |
+| GitHub Actions | run 39157108506，test job 41s 绿 |
 
 压测数字的含义：`demo_pipeline` 不含 LLM 调用，测的是调度/状态机/数据库开销；3 个 Worker，每个并发 2。面试时必须连同配置一起说。
 
@@ -82,12 +84,11 @@ conda run -n durableflow pg_ctl -D .pgdata stop
 ### 4.1 GitHub 仓库
 
 - 私有仓库已创建：https://github.com/2854657510/durableflow
-- 代码已通过 GitHub API 上传（85 个文件，`.env` / `.pgdata` / 日志未上传）。
-- 当前 GitHub token 没有 `workflow` scope，`.github/workflows/ci.yml` 还没上传。
-  在会话里输入 `! gh auth refresh -s workflow`，完成授权后再补 CI。
-- 本机 `git push` 被网络重置，所以本地提交和远程快照的 SHA 不同；内容一致（除 CI 文件）。
+- 代码已通过 GitHub API 上传（86 个文件，`.env` / `.pgdata` / 日志未上传）。
+- `.github/workflows/ci.yml` 已上传；GitHub Actions run **39157108506** 已跑绿（test job 41s）。
+- 本机 `git push` 被网络重置，所以本地提交和远程快照的 SHA 不同；内容一致。
   后续网络恢复后，重新 `git fetch` / 对齐即可；现在以本地工作区为准。
-- 目标版简历继续保持“待推送”，等仓库公开 + CI 绿后再改链接。
+- 目标版简历标签改为“待公开”，等仓库 Public 后再改链接。
 
 推送/同步后检查：
 
@@ -98,9 +99,11 @@ conda run -n durableflow pg_ctl -D .pgdata stop
 
 ### 4.2 更新目标版简历
 
+- [ ] 自己检查/修改 README、代码、演示，确认没有不想公开的内容。
+- [ ] 把 GitHub 仓库从 Private 改为 Public。
 - [ ] 打开 `../优化方案/简历-目标版.html`。
-- [ ] 把 `github.com/2854657510/durableflow（待推送）` 改成可点击链接。
-- [ ] 删除名字旁的“目标版 · 待推送”标签。
+- [ ] 把 `github.com/2854657510/durableflow（私有仓库，待公开）` 改成可点击链接。
+- [ ] 删除名字旁的“目标版 · 待公开”标签。
 - [ ] 用 `04-目标版使用说明.md` 里的 Edge 命令重新生成 PDF。
 - [ ] 确认仍然是一页。
 
