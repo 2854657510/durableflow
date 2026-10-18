@@ -79,19 +79,17 @@ conda run -n durableflow pg_ctl -D .pgdata stop
 
 ## 4. 还差什么
 
-### 4.1 推送到 GitHub
+### 4.1 GitHub 仓库
 
-仓库已在本地 `git init`，但**还没有 commit / push**。在 GitHub 创建 `durableflow` 仓库后：
+- 私有仓库已创建：https://github.com/2854657510/durableflow
+- 代码已通过 GitHub API 上传（85 个文件，`.env` / `.pgdata` / 日志未上传）。
+- 当前 GitHub token 没有 `workflow` scope，`.github/workflows/ci.yml` 还没上传。
+  在会话里输入 `! gh auth refresh -s workflow`，完成授权后再补 CI。
+- 本机 `git push` 被网络重置，所以本地提交和远程快照的 SHA 不同；内容一致（除 CI 文件）。
+  后续网络恢复后，重新 `git fetch` / 对齐即可；现在以本地工作区为准。
+- 目标版简历继续保持“待推送”，等仓库公开 + CI 绿后再改链接。
 
-```bash
-cd C:/Users/Firebat/Desktop/面试/durableflow
-git add .
-git commit -m "feat: durable workflow engine with agent nodes"
-git remote add origin https://github.com/2854657510/durableflow.git
-git push -u origin main
-```
-
-推送后：
+推送/同步后检查：
 
 - [ ] 确认 README 里的 UI 截图能显示。
 - [ ] 确认 `.env`、`.pgdata`、日志没有被推送。
