@@ -1,0 +1,16 @@
+.git
+.gitignore
+.env
+.venv
+__pycache__
+*.pyc
+*.db
+.pytest_cache
+.coverage
+htmlcov
+tests
+.pgdata
+_tmp
+_*.log
+_*.png
+.github

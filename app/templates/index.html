@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DurableFlow · 持久化工作流引擎</title>
+<style>
+  :root {
+    --ink: #172033;
+    --muted: #667085;
+    --line: #e4e7ec;
+    --bg: #f6f8fb;
+    --card: #ffffff;
+    --blue: #1d4ed8;
+    --blue-soft: #eff4ff;
+    --green: #067647;
+    --green-soft: #ecfdf3;
+    --amber: #b54708;
+    --amber-soft: #fffaeb;
+    --red: #b42318;
+    --red-soft: #fef3f2;
+    --purple: #6941c6;
+    --purple-soft: #f4f3ff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  header {
+    background: #0f1b33;
+    color: #fff;
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  .brand h1 { margin: 0; font-size: 21px; letter-spacing: .5px; }
+  .brand span { color: #9fb3d9; font-size: 12px; }
+  .header-actions { display: flex; align-items: center; gap: 10px; }
+  .header-actions input {
+    width: 220px; padding: 8px 10px; border-radius: 7px; border: 1px solid #34446a;
+    background: #16233f; color: #fff; outline: none;
+  }
+  .header-actions input::placeholder { color: #8da1c8; }
+  main { max-width: 1240px; margin: 22px auto 60px; padding: 0 20px; }
+  .grid { display: grid; grid-template-columns: 340px 1fr; gap: 18px; align-items: start; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+    overflow: hidden;
+  }
+  .card + .card { margin-top: 18px; }
+  .card-head {
+    padding: 14px 16px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .card-head h2 { margin: 0; font-size: 15px; }
+  .card-body { padding: 14px 16px; }
+  .muted { color: var(--muted); font-size: 12px; }
+  button {
+    border: 1px solid var(--line); background: #fff; color: var(--ink);
+    border-radius: 7px; padding: 7px 11px; cursor: pointer; font-size: 13px;
+  }
+  button:hover { border-color: #b9c2d2; background: #fafbfc; }
+  button.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+  button.primary:hover { background: #1a45c2; }
+  button.danger { color: var(--red); border-color: #f3b6b0; background: var(--red-soft); }
+  button.small { padding: 4px 8px; font-size: 12px; }
+  .workflow-item {
+    padding: 11px 0; border-bottom: 1px dashed var(--line);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+  }
+  .workflow-item:last-child { border-bottom: none; }
+  .workflow-item b { display: block; font-size: 13px; }
+  .workflow-item .muted { margin-top: 2px; }
+  textarea {
+    width: 100%; min-height: 78px; resize: vertical; padding: 9px 10px;
+    border: 1px solid var(--line); border-radius: 8px; font-family: Consolas, monospace;
+    font-size: 12px; color: var(--ink); outline: none;
+  }
+  textarea:focus, input:focus { border-color: #9db4f5; }
+  label { font-size: 12px; color: var(--muted); display: block; margin: 10px 0 5px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .run-row {
+    display: grid; grid-template-columns: 60px 1fr 110px 90px 70px; gap: 8px;
+    padding: 10px 8px; border-bottom: 1px solid #f0f2f5; cursor: pointer;
+    align-items: center; font-size: 12.5px;
+  }
+  .run-row:hover { background: #f8faff; }
+  .run-row.active { background: var(--blue-soft); }
+  .run-row:last-child { border-bottom: none; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .s-SUCCEEDED { color: var(--green); background: var(--green-soft); }
+  .s-RUNNING { color: var(--blue); background: var(--blue-soft); }
+  .s-PENDING, .s-RETRYING { color: var(--amber); background: var(--amber-soft); }
+  .s-WAITING_APPROVAL { color: var(--purple); background: var(--purple-soft); }
+  .s-FAILED, .s-DEAD, .s-CANCELED { color: var(--red); background: var(--red-soft); }
+  .s-BLOCKED { color: var(--muted); background: #f2f4f7; }
+  .timeline { margin: 0; padding: 0; list-style: none; }
+  .timeline li {
+    position: relative; padding: 0 0 14px 22px; border-left: 2px solid var(--line);
+    margin-left: 6px;
+  }
+  .timeline li:last-child { border-left-color: transparent; padding-bottom: 0; }
+  .timeline li::before {
+    content: ""; position: absolute; left: -6px; top: 2px; width: 10px; height: 10px;
+    border-radius: 50%; background: #cbd5e1; border: 2px solid #fff;
+  }
+  .timeline li.ok::before { background: #12b76a; }
+  .timeline li.run::before { background: #1d4ed8; }
+  .timeline li.wait::before { background: #7f56d9; }
+  .timeline li.bad::before { background: #f04438; }
+  .step-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .step-head b { font-size: 13px; }
+  .step-meta { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+  pre {
+    background: #0f172a; color: #dbe7ff; border-radius: 8px; padding: 10px;
+    overflow: auto; font-size: 11.5px; max-height: 220px; margin: 8px 0 0;
+  }
+  .empty { color: var(--muted); text-align: center; padding: 22px 10px; font-size: 12.5px; }
+  .error { color: var(--red); background: var(--red-soft); border: 1px solid #fecdca; border-radius: 8px; padding: 8px 10px; font-size: 12.5px; margin-top: 10px; display: none; }
+  .approval-item { border: 1px solid var(--line); border-radius: 9px; padding: 10px; margin-bottom: 9px; }
+  .approval-item:last-child { margin-bottom: 0; }
+  .approval-item .row { margin-top: 8px; }
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: 1fr; }
+    .run-row { grid-template-columns: 50px 1fr 90px; }
+    .run-row .hide-sm { display: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>DurableFlow</h1>
+    <span>持久化执行 · 租约恢复 · 幂等 Outbox · AI 节点</span>
+  </div>
+  <div class="header-actions">
+    <input id="apiKey" placeholder="X-API-Key（开发环境可留空）">
+    <button class="small" onclick="saveKey()">保存</button>
+  </div>
+</header>
+
+<main>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <div class="card-head">
+          <h2>启动工作流</h2>
+          <button class="small" onclick="loadWorkflows()">刷新</button>
+        </div>
+        <div class="card-body">
+          <div id="workflows" class="muted">加载中…</div>
+          <label for="runInput">运行输入（JSON）</label>
+          <textarea id="runInput">{"goal": "整理项目评审材料并给出结论"}</textarea>
+          <div class="row" style="margin-top:10px">
+            <button class="primary" onclick="startSelected()">启动选中的工作流</button>
+            <span class="muted" id="selectedName">未选择</span>
+          </div>
+          <div id="error" class="error"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>待审批</h2>
+          <button class="small" onclick="loadApprovals()">刷新</button>
+        </div>
+        <div class="card-body" id="approvals">
+          <div class="empty">暂无待审批</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>运行说明</h2></div>
+        <div class="card-body muted">
+          1. 选一个工作流，点“启动”。<br>
+          2. 右侧查看步骤时间线；高风险工具会停在“待审批”。<br>
+          3. 审批通过后，Worker 从断点继续。<br>
+          4. 杀掉 Worker 再启动，租约过期后任务会自动恢复。
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-head">
+          <h2>运行列表</h2>
+          <span class="muted" id="runCount"></span>
+        </div>
+        <div class="card-body" id="runs">
+          <div class="empty">暂无运行</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>执行时间线</h2>
+          <span class="muted" id="detailTitle">选择一个运行查看详情</span>
+        </div>
+        <div class="card-body" id="detail">
+          <div class="empty">点击上方运行记录</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+let workflows = [];
+let selectedWorkflow = null;
+let selectedRun = null;
+
+function headers() {
+  const key = localStorage.getItem("durableflow_api_key") || "";
+  const h = {"Content-Type": "application/json"};
+  if (key) h["X-API-Key"] = key;
+  return h;
+}
+
+function saveKey() {
+  const value = document.getElementById("apiKey").value.trim();
+  if (value) localStorage.setItem("durableflow_api_key", value);
+  else localStorage.removeItem("durableflow_api_key");
+  loadAll();
+}
+
+function showError(message) {
+  const el = document.getElementById("error");
+  el.textContent = message;
+  el.style.display = message ? "block" : "none";
+}
+
+async function api(path, options = {}) {
+  const resp = await fetch(path, {...options, headers: {...headers(), ...(options.headers || {})}});
+  if (!resp.ok) {
+    let detail = resp.statusText;
+    try { detail = (await resp.json()).detail || detail; } catch (e) {}
+    throw new Error(`${resp.status} ${detail}`);
+  }
+  return resp.json();
+}
+
+async function loadWorkflows() {
+  try {
+    workflows = await api("/api/workflows");
+    const box = document.getElementById("workflows");
+    if (!workflows.length) { box.innerHTML = '<div class="empty">还没有工作流</div>'; return; }
+    box.innerHTML = workflows.map(w => `
+      <div class="workflow-item">
+        <div>
+          <b>${escapeHtml(w.name)}</b>
+          <div class="muted">v${w.version} · ${(w.spec.steps || []).length} 个步骤</div>
+        </div>
+        <button class="small ${selectedWorkflow === w.id ? "primary" : ""}" onclick="selectWorkflow(${w.id}, '${escapeJs(w.name)}')">选择</button>
+      </div>
+    `).join("");
+  } catch (e) { showError(e.message); }
+}
+
+function selectWorkflow(id, name) {
+  selectedWorkflow = id;
+  document.getElementById("selectedName").textContent = name;
+  loadWorkflows();
+}
+
+async function startSelected() {
+  if (!selectedWorkflow) { showError("先选择一个工作流"); return; }
+  let input = {};
+  try { input = JSON.parse(document.getElementById("runInput").value || "{}"); }
+  catch (e) { showError("输入不是合法 JSON"); return; }
+  try {
+    showError("");
+    const result = await api(`/api/workflows/${selectedWorkflow}/runs`, {
+      method: "POST",
+      body: JSON.stringify({input, max_cost: 1.0}),
+    });
+    selectedRun = result.run.id;
+    await loadRuns();
+    await loadDetail();
+  } catch (e) { showError(e.message); }
+}
+
+async function loadRuns() {
+  try {
+    const runs = await api("/api/runs?limit=40");
+    document.getElementById("runCount").textContent = `${runs.length} 条`;
+    const box = document.getElementById("runs");
+    if (!runs.length) { box.innerHTML = '<div class="empty">暂无运行</div>'; return; }
+    box.innerHTML = runs.map(r => {
+      const wf = workflows.find(w => w.id === r.workflow_id);
+      const wfLabel = wf ? `${escapeHtml(wf.name)} v${wf.version}` : `workflow ${r.workflow_id}`;
+      return `
+      <div class="run-row ${selectedRun === r.id ? "active" : ""}" onclick="selectRun(${r.id})">
+        <span class="muted">#${r.id}</span>
+        <span>${statusBadge(r.status)}<span class="muted" style="margin-left:6px">${wfLabel}</span></span>
+        <span class="muted hide-sm">${fmtTime(r.created_at)}</span>
+        <span class="muted hide-sm">${r.total_tokens} tok</span>
+        <span class="muted hide-sm">$${Number(r.total_cost).toFixed(4)}</span>
+      </div>
+    `;
+    }).join("");
+  } catch (e) { showError(e.message); }
+}
+
+function selectRun(id) {
+  selectedRun = id;
+  loadRuns();
+  loadDetail();
+}
+
+async function loadDetail() {
+  if (!selectedRun) return;
+  try {
+    const [run, steps, events] = await Promise.all([
+      api(`/api/runs/${selectedRun}`),
+      api(`/api/runs/${selectedRun}/steps`),
+      api(`/api/runs/${selectedRun}/events`),
+    ]);
+    document.getElementById("detailTitle").textContent = `运行 #${run.id} · ${run.status}`;
+    const stepHtml = steps.map(s => `
+      <li class="${stepClass(s.status)}">
+        <div class="step-head">
+          <b>${escapeHtml(s.step_name)}</b>
+          ${statusBadge(s.status)}
+          <span class="muted">attempt ${s.attempt}/${s.max_attempts}</span>
+        </div>
+        <div class="step-meta">
+          ${escapeHtml(s.node_type)} · ${fmtTime(s.started_at)} → ${fmtTime(s.finished_at)}
+          ${s.error ? ` · <span style="color:#b42318">${escapeHtml(s.error)}</span>` : ""}
+        </div>
+        ${s.output ? `<pre>${escapeHtml(JSON.stringify(s.output, null, 2))}</pre>` : ""}
+      </li>
+    `).join("");
+    const eventHtml = events.slice(-20).map(e => `
+      <li class="${e.type.includes("failed") || e.type.includes("dead") ? "bad" : e.type.includes("approval") ? "wait" : "run"}">
+        <div class="step-head"><b>${escapeHtml(e.type)}</b><span class="muted">${fmtTime(e.created_at)}</span></div>
+        <div class="step-meta">${escapeHtml(JSON.stringify(e.payload))}</div>
+      </li>
+    `).join("");
+    document.getElementById("detail").innerHTML = `
+      <div class="row" style="margin-bottom:12px">
+        ${statusBadge(run.status)}
+        <span class="muted">tokens ${run.total_tokens} · cost $${Number(run.total_cost).toFixed(4)} / $${run.max_cost}</span>
+        ${run.status === "RUNNING" || run.status === "PENDING" || run.status === "WAITING_APPROVAL"
+          ? `<button class="small danger" onclick="cancelRun(${run.id})">取消</button>` : ""}
+      </div>
+      <h3 style="margin:8px 0 10px;font-size:14px">步骤</h3>
+      ${stepHtml ? `<ul class="timeline">${stepHtml}</ul>` : '<div class="empty">还没有步骤</div>'}
+      <h3 style="margin:18px 0 10px;font-size:14px">最近事件</h3>
+      ${eventHtml ? `<ul class="timeline">${eventHtml}</ul>` : '<div class="empty">还没有事件</div>'}
+    `;
+  } catch (e) { showError(e.message); }
+}
+
+async function cancelRun(id) {
+  try { await api(`/api/runs/${id}/cancel`, {method: "POST"}); await loadRuns(); await loadDetail(); }
+  catch (e) { showError(e.message); }
+}
+
+async function loadApprovals() {
+  try {
+    const approvals = await api("/api/approvals?status=PENDING");
+    const box = document.getElementById("approvals");
+    if (!approvals.length) { box.innerHTML = '<div class="empty">暂无待审批</div>'; return; }
+    box.innerHTML = approvals.map(a => `
+      <div class="approval-item">
+        <div class="row">
+          <b>#${a.id}</b>
+          ${statusBadge(a.status)}
+          <span class="muted">step ${a.step_id}</span>
+        </div>
+        <div class="muted" style="margin-top:5px">
+          ${a.tool_name ? `高风险工具：${escapeHtml(a.tool_name)}` : "流程审批"}
+        </div>
+        <pre>${escapeHtml(JSON.stringify(a.arguments || {}, null, 2))}</pre>
+        <div class="row">
+          <button class="primary small" onclick="decide(${a.id}, true)">通过</button>
+          <button class="danger small" onclick="decide(${a.id}, false)">拒绝</button>
+        </div>
+      </div>
+    `).join("");
+  } catch (e) { showError(e.message); }
+}
+
+async function decide(id, approved) {
+  try {
+    await api(`/api/approvals/${id}/${approved ? "approve" : "reject"}`, {
+      method: "POST",
+      body: JSON.stringify({decided_by: "ui", comment: approved ? "同意" : "驳回"}),
+    });
+    await loadApprovals();
+    await loadRuns();
+    if (selectedRun) await loadDetail();
+  } catch (e) { showError(e.message); }
+}
+
+function statusBadge(status) {
+  return `<span class="badge s-${status}">${status}</span>`;
+}
+function stepClass(status) {
+  if (status === "SUCCEEDED") return "ok";
+  if (status === "FAILED" || status === "DEAD" || status === "CANCELED") return "bad";
+  if (status === "WAITING_APPROVAL") return "wait";
+  return "run";
+}
+function fmtTime(value) {
+  if (!value) return "-";
+  return new Date(value).toLocaleString("zh-CN", {hour12: false});
+}
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeJs(value) {
+  return String(value ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
+async function loadAll() {
+  await loadWorkflows();
+  await loadRuns();
+  await loadApprovals();
+  if (selectedRun) await loadDetail();
+}
+
+document.getElementById("apiKey").value = localStorage.getItem("durableflow_api_key") || "";
+loadAll();
+setInterval(loadAll, 2500);
+</script>
+</body>
+</html>
