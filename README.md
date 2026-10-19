@@ -21,7 +21,7 @@ DurableFlow 把每个步骤变成**可持久化、可重试、可恢复、可审
 
 ---
 
-## 3. 架构
+## 2. 架构
 
 ```text
                     ┌─────────────────────────────┐
@@ -61,7 +61,7 @@ DurableFlow 把每个步骤变成**可持久化、可重试、可恢复、可审
 
 ---
 
-## 4. 功能
+## 3. 功能
 
 - 工作流定义：`steps` + `depends_on`，DAG 依赖；启动时校验环和缺失依赖。
 - 状态机：`PENDING / RUNNING / WAITING_APPROVAL / SUCCEEDED / FAILED / CANCELED`；步骤级 `BLOCKED / RETRYING / DEAD`。
@@ -83,7 +83,7 @@ DurableFlow 把每个步骤变成**可持久化、可重试、可恢复、可审
 
 ---
 
-## 5. 快速开始
+## 4. 快速开始
 
 > 本机已经配好一版：见 `docs/handoff.md`（包含当前运行状态、重启命令、推送 GitHub 的步骤）。
 
@@ -144,7 +144,7 @@ alembic upgrade head
 
 ---
 
-## 7. 演示脚本
+## 5. 演示脚本
 
 ```bash
 # 完整 Agent 审批链路：规划 → 审批 → Agent → 审查 → 报告
@@ -186,7 +186,7 @@ conda run --no-capture-output -n durableflow pytest -q
 
 ---
 
-## 9. 目录结构
+## 6. 目录结构
 
 ```text
 durableflow/
@@ -215,7 +215,7 @@ durableflow/
 
 ---
 
-## 10. 已知限制
+## 7. 已知限制
 
 - **Agent 内部状态是步骤级恢复**：步骤崩溃后会从该步骤开头重跑；消息级 checkpoint 还没做。生产可以进一步把 messages 持久化到 `step_runs.output` 或单独表。
 - **单 PostgreSQL 主库**：不做多主/跨区域多活。
@@ -226,13 +226,3 @@ durableflow/
 - **成本是估算**：按配置的 1M token 单价计算，不是供应商账单级精确。
 - **Docker Compose 未在本机验证**：Docker Hub 网络受限；本地 conda PostgreSQL 路径已验证。
 - **没有 RBAC**：只有可选 `API_KEY`；企业多租户权限需要再加。
-
-
-
-## 13. 下一步
-
-- 消息级 Agent checkpoint（真正从“第 3 轮工具调用”恢复）。
-- 运行中动态加步骤（planner 生成 DAG 并持久化）。
-- 多租户 + RBAC + 审计日志。
-- Grafana dashboard。
-- 用真实模型跑一组评测，替换 mock 数字。
