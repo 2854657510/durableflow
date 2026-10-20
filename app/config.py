@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     api_key: str = ""
     rate_limit_per_minute: int = 120
 
+    # SSE 事件流：轮询间隔、心跳间隔、单批最多补发多少条
+    sse_poll_seconds: float = 1.0
+    sse_heartbeat_seconds: float = 15.0
+    sse_batch_size: int = 200
+
     # LLM
     llm_provider: str = "mock"
     llm_base_url: str = "https://api.deepseek.com/v1"

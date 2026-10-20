@@ -14,3 +14,4 @@ data/
 _tmp/
 _*.log
 _*.png
+.idea/

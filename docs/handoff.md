@@ -14,7 +14,7 @@
 | 数据库 | `durableflow` |
 | 配置文件 | `.env`（已从 `.env.example` 复制，`LLM_PROVIDER=mock`，不花钱） |
 | 数据表 | 已由 `scripts/seed.py` 创建并注册 7 个内置工作流 |
-| 测试 | 30 个，全部通过 |
+| 测试 | 39 个，全部通过 |
 | API | 已启动：http://127.0.0.1:8000 |
 | UI | 已启动：http://127.0.0.1:8000/ui |
 | Worker | 已启动（后台），会处理新运行 |
@@ -30,7 +30,10 @@
 
 | 命令/路径 | 结果 |
 |---|---|
-| `pytest -q` | 30 passed |
+| `pytest -q` | 39 passed |
+| `curl -N /api/runs/{id}/events/stream` | 收到 7 条事件 + `done`；`Last-Event-ID` 只补发之后的事件 |
+| `python scripts/benchmark_async.py --requests 100 --delay-ms 50 --concurrency 1,4,8,16,32` | 16.03 → 400 req/s，服务 P95 63ms |
+| `python scripts/load_test.py --requests 100 --concurrency 20` | 100/100 成功，107.43 run/s，创建 P95 273ms，端到端 P95 2058ms |
 | `python scripts/demo.py --workflow agent_review` | 规划 → 审批 → Agent → 审查 → 报告，SUCCEEDED |
 | `python scripts/demo.py --workflow dangerous_agent --goal "Send email to ops@example.com"` | 高风险工具触发审批，通过后继续，SUCCEEDED |
 | `python scripts/demo.py --workflow fail_retry` | 前两次失败，第三次成功 |
@@ -99,13 +102,13 @@ conda run -n durableflow pg_ctl -D .pgdata stop
 
 ### 4.2 更新目标版简历
 
+- [x] 目标版已按黄色标注重排：技能前置、概述后置、删除标注内容。
+- [x] 链接已改成可点击的 `https://github.com/2854657510/durableflow`，不再写“私有仓库，待公开”。
+- [x] 名字旁的“目标版 · 待公开”标签已删除。
 - [ ] 自己检查/修改 README、代码、演示，确认没有不想公开的内容。
-- [ ] 把 GitHub 仓库从 Private 改为 Public。
-- [ ] 打开 `../优化方案/简历-目标版.html`。
-- [ ] 把 `github.com/2854657510/durableflow（私有仓库，待公开）` 改成可点击链接。
-- [ ] 删除名字旁的“目标版 · 待公开”标签。
-- [ ] 用 `04-目标版使用说明.md` 里的 Edge 命令重新生成 PDF。
-- [ ] 确认仍然是一页。
+- [ ] **把 GitHub 仓库从 Private 改为 Public**（现在是 Private，链接对招聘方 404）。
+- [ ] 决定是否把 SSE / 异步批量两条写进 DurableFlow 的 bullet；措辞见 `../优化方案/05-项目证据与取舍.md` 第 7 节。
+- [ ] 用 `04-目标版使用说明.md` 里的 Edge 命令重新生成 PDF，确认仍然是一页。
 
 ### 4.3 面试准备
 
@@ -168,4 +171,6 @@ python scripts/seed.py
 4. `app/agent/loop.py` — Agent 执行链路。
 5. `app/core/outbox.py` / `app/models.py` — 幂等与 Outbox。
 6. `app/core/context.py` / `app/agent/memory.py` — 上下文压缩与长期记忆。
-7. `docs/interview-notes.md` — 46 道追问。
+7. `app/api/runs.py` 的 SSE 端点 / `app/llm/async_batch.py` — 流式重连与并发控制。
+8. `docs/sse.md` / `docs/tradeoffs.md` — 面试可直接讲的细节。
+9. `docs/interview-notes.md` — 46 道追问。
