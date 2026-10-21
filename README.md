@@ -59,7 +59,7 @@ DurableFlow 把每个步骤变成**可持久化、可重试、可恢复、可审
 4. **至少一次 + 幂等**：外部副作用不承诺字面 exactly-once；用唯一键和 Outbox 保证“重跑不产生第二次副作用”。
 5. **LLM 只是一个节点**：模型会超时、限流、返回脏 JSON；它和普通函数一样需要重试、超时、成本控制和降级。
 
-更细的文档：[架构图](docs/architecture.md)、[API 约定](docs/api-conventions.md)、[数据库性能](docs/db-performance.md)、[部署与监控](docs/deploy.md)、[安全与审计](docs/security.md)、[排障手册](docs/troubleshooting.md)、[测试报告](docs/test-report.md)、[选型取舍](docs/tradeoffs.md)。
+更细的文档：[架构图](docs/architecture.md)、[API 约定](docs/api-conventions.md)、[数据库性能](docs/db-performance.md)、[部署与监控](docs/deploy.md)、[安全与审计](docs/security.md)、[生产化路线](docs/production-roadmap.md)、[排障手册](docs/troubleshooting.md)、[测试报告](docs/test-report.md)、[选型取舍](docs/tradeoffs.md)。
 
 ---
 
@@ -262,7 +262,7 @@ durableflow/
 ├── deploy/nginx.conf           # SSE 反向代理示例
 ├── scripts/                    # seed / demo / crash_recovery / benchmark / benchmark_async / load_test / db_benchmark
 ├── tests/                      # 50 个测试，76% 覆盖率
-├── docs/                       # architecture / api-conventions / db-performance / deploy / security / troubleshooting / sse / tradeoffs / test-report
+├── docs/                       # architecture / api-conventions / db-performance / deploy / security / production-roadmap / troubleshooting / sse / tradeoffs / test-report
 ├── docker-compose.yml
 ├── Dockerfile
 ├── prometheus.yml
