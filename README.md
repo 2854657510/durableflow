@@ -59,7 +59,7 @@ DurableFlow 把每个步骤变成**可持久化、可重试、可恢复、可审
 4. **至少一次 + 幂等**：外部副作用不承诺字面 exactly-once；用唯一键和 Outbox 保证“重跑不产生第二次副作用”。
 5. **LLM 只是一个节点**：模型会超时、限流、返回脏 JSON；它和普通函数一样需要重试、超时、成本控制和降级。
 
-更细的文档：[架构图](docs/architecture.md)、[API 约定](docs/api-conventions.md)、[数据库性能](docs/db-performance.md)、[部署](docs/deploy.md)、[排障手册](docs/troubleshooting.md)、[测试报告](docs/test-report.md)、[选型取舍](docs/tradeoffs.md)。
+更细的文档：[架构图](docs/architecture.md)、[API 约定](docs/api-conventions.md)、[数据库性能](docs/db-performance.md)、[部署与监控](docs/deploy.md)、[安全与审计](docs/security.md)、[排障手册](docs/troubleshooting.md)、[测试报告](docs/test-report.md)、[选型取舍](docs/tradeoffs.md)。
 
 ---
 
@@ -81,10 +81,11 @@ DurableFlow 把每个步骤变成**可持久化、可重试、可恢复、可审
 - 异步批量 LLM：`asyncio.Semaphore` 控制并发，独立超时/重试，退避时释放并发槽。
 - API 工程：`/api/v1` 版本、`limit/offset` 分页 + `X-Total-Count`、统一错误码、Pydantic 参数校验、API Key 恒定时比较、OpenAPI 文档。
 - 数据库索引：领取队列增加部分索引，20 万行实测 21.083ms → 0.030ms（见 `docs/db-performance.md`）。
-- 观测：结构化 JSON 日志（request_id/run_id/step_id）、Prometheus 指标、可选 OpenTelemetry。
+- 观测：结构化 JSON 日志（request_id/run_id/step_id、邮箱/手机号/Key 脱敏）、Prometheus 指标、Grafana 告警与 Dashboard、OTel Trace（`step.execute`、`llm.chat`）。
+- 安全：API Key 恒定时比较、日志脱敏、提示词注入规则防护、审批审计（操作人/意见/request_id/IP）。
 - API：工作流、运行、步骤、事件、SSE、取消、手动重试、审批、成本、Worker、健康检查。
 - UI：工作流启动、运行列表、步骤时间线、事件、审批按钮。
-- 测试：45 个测试、76% 覆盖率，覆盖状态机、重试、上下文、工具权限、记忆、抢占、租约、幂等、Outbox、Agent、API v1、SSE、异步批量。
+- 测试：50 个测试、76% 覆盖率，覆盖状态机、重试、上下文、工具权限、记忆、抢占、租约、幂等、Outbox、Agent、API v1、SSE、异步批量。
 - 压测/演示：`benchmark.py`、`benchmark_async.py`、`load_test.py`、`db_benchmark.py`、`crash_recovery.py`、`demo.py`、`compare_versions.py`。
 
 ---
@@ -216,7 +217,7 @@ python scripts/load_test.py --requests 100 --concurrency 20 --timeout 120
 
 ```bash
 conda run --no-capture-output -n durableflow pytest -q
-# 45 passed
+# 50 passed
 pytest -q --cov=app --cov-report=term   # 76%
 ```
 
@@ -260,8 +261,8 @@ durableflow/
 ├── alembic/                    # 初始迁移
 ├── deploy/nginx.conf           # SSE 反向代理示例
 ├── scripts/                    # seed / demo / crash_recovery / benchmark / benchmark_async / load_test / db_benchmark
-├── tests/                      # 45 个测试，76% 覆盖率
-├── docs/                       # architecture / api-conventions / db-performance / deploy / troubleshooting / sse / tradeoffs / test-report
+├── tests/                      # 50 个测试，76% 覆盖率
+├── docs/                       # architecture / api-conventions / db-performance / deploy / security / troubleshooting / sse / tradeoffs / test-report
 ├── docker-compose.yml
 ├── Dockerfile
 ├── prometheus.yml

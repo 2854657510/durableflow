@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -31,6 +31,7 @@ def list_approvals(
 def approve(
     approval_id: int,
     payload: ApprovalDecision,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     try:
@@ -40,6 +41,8 @@ def approve(
             approved=True,
             decided_by=payload.decided_by,
             comment=payload.comment,
+            request_id=getattr(request.state, "request_id", None),
+            actor_ip=request.client.host if request.client else None,
         )
     except RunError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -49,6 +52,7 @@ def approve(
 def reject(
     approval_id: int,
     payload: ApprovalDecision,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     try:
@@ -58,6 +62,8 @@ def reject(
             approved=False,
             decided_by=payload.decided_by,
             comment=payload.comment,
+            request_id=getattr(request.state, "request_id", None),
+            actor_ip=request.client.host if request.client else None,
         )
     except RunError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

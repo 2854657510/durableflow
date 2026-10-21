@@ -13,8 +13,8 @@ pytest -q --cov=app --cov-report=term
 
 ## 2. 结果
 
-- **45 passed**，0 failed。
-- 总覆盖率：**76%**（2396 statements，575 miss）。
+- **50 passed**，0 failed。
+- 总覆盖率：**76%**（2453 statements，587 miss）。
 - 警告：SQLite datetime adapter 弃用、Starlette TestClient 弃用；不影响结果。
 
 核心模块覆盖：
@@ -33,6 +33,8 @@ pytest -q --cov=app --cov-report=term
 | `app/worker/executor.py` | 72% |
 | `app/services/runs.py` | 69% |
 | `app/llm/async_batch.py` | 66% |
+| `app/observability/redaction.py` | 100% |
+| `app/core/prompt_guard.py` | 100% |
 | `app/worker/lease.py` | 50% |
 
 覆盖率不是越高越好；50% 左右的 `lease.py` / `worker/main.py` 主要是后台循环和信号处理，靠 `scripts/crash_recovery.py` 做真实进程级验证。

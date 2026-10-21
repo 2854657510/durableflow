@@ -15,11 +15,23 @@ def setup_tracing() -> None:
         return
     try:
         from opentelemetry import trace
+        from opentelemetry.sdk.resources import Resource
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 
-        provider = TracerProvider()
-        provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
+        exporter = ConsoleSpanExporter()
+        if settings.otel_exporter_otlp_endpoint:
+            try:
+                from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+
+                exporter = OTLPSpanExporter(endpoint=settings.otel_exporter_otlp_endpoint)
+            except Exception:  # noqa: BLE001 - 缺依赖时退回控制台，不影响主链路
+                exporter = ConsoleSpanExporter()
+
+        provider = TracerProvider(
+            resource=Resource.create({"service.name": settings.otel_service_name})
+        )
+        provider.add_span_processor(BatchSpanProcessor(exporter))
         trace.set_tracer_provider(provider)
         _tracer = trace.get_tracer("durableflow")
     except Exception:  # noqa: BLE001 - 观测不能影响主链路

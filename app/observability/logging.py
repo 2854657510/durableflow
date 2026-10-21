@@ -6,6 +6,8 @@ import sys
 from contextvars import ContextVar
 from datetime import datetime, timezone
 
+from app.observability.redaction import redact_text, redact_value
+
 request_id_var: ContextVar[str | None] = ContextVar("request_id", default=None)
 run_id_var: ContextVar[int | None] = ContextVar("run_id", default=None)
 step_id_var: ContextVar[int | None] = ContextVar("step_id", default=None)
@@ -17,16 +19,16 @@ class JsonFormatter(logging.Formatter):
             "ts": datetime.now(timezone.utc).isoformat(),
             "level": record.levelname,
             "logger": record.name,
-            "message": record.getMessage(),
+            "message": redact_text(record.getMessage()),
             "request_id": request_id_var.get(),
             "run_id": run_id_var.get(),
             "step_id": step_id_var.get(),
         }
         if record.exc_info:
-            payload["exc_info"] = self.formatException(record.exc_info)
+            payload["exc_info"] = redact_text(self.formatException(record.exc_info))
         extra = getattr(record, "extra_fields", None)
         if isinstance(extra, dict):
-            payload.update(extra)
+            payload.update(redact_value(extra))
         return json.dumps(payload, ensure_ascii=False)
 
 

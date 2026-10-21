@@ -1,0 +1,40 @@
+groups:
+  - name: durableflow
+    rules:
+      - alert: DurableFlowQueueBacklog
+        expr: durableflow_queue_depth > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "DurableFlow 待执行步骤积压"
+          description: "队列深度持续 5 分钟超过 100，检查 Worker 是否存活、领取是否变慢。"
+
+      - alert: DurableFlowOutboxLag
+        expr: durableflow_outbox_lag_seconds > 60
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "DurableFlow Outbox 投递延迟"
+          description: "最老待投递事件超过 60 秒，检查 relay 和下游消费。"
+
+      - alert: DurableFlowLeaseExpired
+        expr: increase(durableflow_lease_expired_total[10m]) > 3
+        labels:
+          severity: warning
+        annotations:
+          summary: "DurableFlow 租约频繁过期"
+          description: "10 分钟内超过 3 次，检查步骤耗时、心跳线程和 Worker 重启。"
+
+      - alert: DurableFlowStepFailureRate
+        expr: |
+          sum(rate(durableflow_steps_total{status="FAILED"}[5m]))
+          /
+          clamp_min(sum(rate(durableflow_steps_total[5m])), 0.001) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "DurableFlow 步骤失败率超过 5%"
+          description: "查看失败步骤的 error、LLM 429/超时和死信队列。"

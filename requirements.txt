@@ -12,3 +12,4 @@ jsonschema>=4.23
 prometheus-client>=0.20
 opentelemetry-api>=1.27
 opentelemetry-sdk>=1.27
+opentelemetry-exporter-otlp>=1.27

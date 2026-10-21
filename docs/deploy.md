@@ -93,7 +93,37 @@ alembic current
 当前 head：`9f1c2a7b4d10`（新增部分索引 `idx_steps_claim_partial`）。
 生产建索引建议用 `CREATE INDEX CONCURRENTLY`，避免锁表。
 
-## 6. 监控
+## 6. 监控与告警
+
+- Prometheus：http://localhost:9090
+- Grafana：http://localhost:3000（本地演示账号 `admin/admin`，生产必须改）
+- 告警规则：`deploy/prometheus-alerts.yml`
+- Dashboard：`deploy/grafana/provisioning/dashboards/durableflow.json`
+
+已配置的告警：
+
+| 告警 | 条件 | 含义 |
+|---|---|---|
+| `DurableFlowQueueBacklog` | `queue_depth > 100` 持续 5m | Worker 不够或领取变慢 |
+| `DurableFlowOutboxLag` | `outbox_lag_seconds > 60` 持续 5m | Outbox relay/消费异常 |
+| `DurableFlowLeaseExpired` | 10 分钟租约过期 > 3 次 | 步骤超时或 Worker 重启 |
+| `DurableFlowStepFailureRate` | 失败率 > 5% 持续 5m | 业务/模型/下游故障 |
+
+> 这些配置通过了 YAML/JSON 和 `docker compose config` 校验；本机 Docker daemon 未启动，**没有实际拉起 Grafana 截图**。
+
+### OpenTelemetry
+
+```bash
+OTEL_ENABLED=true
+OTEL_SERVICE_NAME=durableflow
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318/v1/traces
+```
+
+- 不配 endpoint 时用 ConsoleSpanExporter，方便本地调试。
+- 配了 endpoint 走 OTLP/HTTP；需要安装 `opentelemetry-exporter-otlp`（已写入 requirements）。
+- 当前埋点：`step.execute`、`llm.chat`；属性含 run/step/model/prompt_version/guard_hits。
+
+### 指标
 
 - `/metrics`：Prometheus 文本格式。
 - 关键指标：

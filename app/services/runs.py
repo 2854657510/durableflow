@@ -231,6 +231,8 @@ def decide_approval(
     approved: bool,
     decided_by: str = "system",
     comment: str | None = None,
+    request_id: str | None = None,
+    actor_ip: str | None = None,
 ) -> Approval:
     approval = session.get(Approval, approval_id)
     if approval is None:
@@ -271,7 +273,13 @@ def decide_approval(
         step.run_id,
         event_type,
         step_id=step.id,
-        payload={"approval_id": approval.id, "decided_by": decided_by, "comment": comment},
+        payload={
+            "approval_id": approval.id,
+            "decided_by": decided_by,
+            "comment": comment,
+            "request_id": request_id,
+            "actor_ip": actor_ip,
+        },
     )
     enqueue(
         session,

@@ -1,0 +1,75 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "graphTooltip": 0,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "队列深度",
+      "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0},
+      "targets": [{"expr": "durableflow_queue_depth", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+    },
+    {
+      "type": "stat",
+      "title": "Outbox 延迟（秒）",
+      "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0},
+      "targets": [{"expr": "durableflow_outbox_lag_seconds", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}
+    },
+    {
+      "type": "stat",
+      "title": "租约过期（10 分钟）",
+      "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0},
+      "targets": [{"expr": "increase(durableflow_lease_expired_total[10m])", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+    },
+    {
+      "type": "stat",
+      "title": "步骤失败率",
+      "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0},
+      "targets": [
+        {
+          "expr": "sum(rate(durableflow_steps_total{status=\"FAILED\"}[5m])) / clamp_min(sum(rate(durableflow_steps_total[5m])), 0.001)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {"defaults": {"unit": "percentunit"}, "overrides": []}
+    },
+    {
+      "type": "timeseries",
+      "title": "步骤速率（按状态）",
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 8},
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(durableflow_steps_total[1m]))",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
+    },
+    {
+      "type": "timeseries",
+      "title": "步骤 P95 耗时",
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 8},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(durableflow_step_duration_seconds_bucket[5m])))",
+          "legendFormat": "p95",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": ["durableflow"],
+  "templating": {"list": []},
+  "time": {"from": "now-15m", "to": "now"},
+  "timezone": "browser",
+  "title": "DurableFlow",
+  "uid": "durableflow",
+  "version": 1
+}

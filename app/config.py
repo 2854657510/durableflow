@@ -49,6 +49,8 @@ class Settings(BaseSettings):
     # 观测
     log_level: str = "INFO"
     otel_enabled: bool = False
+    otel_service_name: str = "durableflow"
+    otel_exporter_otlp_endpoint: str = ""
 
     # 开发便利：启动时自动建表。生产环境应改为 false，使用 Alembic。
     auto_create_tables: bool = True
