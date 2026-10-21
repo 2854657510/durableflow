@@ -43,7 +43,7 @@
 | `python scripts/benchmark.py --runs 40 --workers 3` | 40/40 成功，135.32 步骤/秒，P50 0.755s，P95 0.796s |
 | `python scripts/compare_versions.py --name demo_pipeline --a 1 --b 2 --runs 12 --workers 2` | A/B 对比输出成功率、P95、token、成本 |
 | `alembic upgrade head` | 在 `durableflow_migrate` 库验证通过 |
-| GitHub Actions | run 39157108506，test job 41s 绿 |
+| GitHub Actions | run 39569983391，test job 41s 绿 |
 
 压测数字的含义：`demo_pipeline` 不含 LLM 调用，测的是调度/状态机/数据库开销；3 个 Worker，每个并发 2。面试时必须连同配置一起说。
 
@@ -90,7 +90,7 @@ conda run -n durableflow pg_ctl -D .pgdata stop
 
 - 私有仓库已创建：https://github.com/2854657510/durableflow
 - 代码已通过 GitHub API 上传（86 个文件，`.env` / `.pgdata` / 日志未上传）。
-- `.github/workflows/ci.yml` 已上传；GitHub Actions run **39157108506** 已跑绿（test job 41s）。
+- `.github/workflows/ci.yml` 已上传；GitHub Actions run **39569983391** 已跑绿（test job 41s）。
 - 本机 `git push` 被网络重置，所以本地提交和远程快照的 SHA 不同；内容一致。
   后续网络恢复后，重新 `git fetch` / 对齐即可；现在以本地工作区为准。
 - 目标版简历标签改为“待公开”，等仓库 Public 后再改链接。
