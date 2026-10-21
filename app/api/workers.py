@@ -8,7 +8,7 @@ from app.models import Worker
 from app.schemas import WorkerOut
 
 router = APIRouter(
-    prefix="/api/workers",
+    prefix="/workers",
     tags=["workers"],
     dependencies=[Depends(require_api_key)],
 )

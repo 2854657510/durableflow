@@ -59,7 +59,7 @@ DurableFlow 把每个步骤变成**可持久化、可重试、可恢复、可审
 4. **至少一次 + 幂等**：外部副作用不承诺字面 exactly-once；用唯一键和 Outbox 保证“重跑不产生第二次副作用”。
 5. **LLM 只是一个节点**：模型会超时、限流、返回脏 JSON；它和普通函数一样需要重试、超时、成本控制和降级。
 
-更细的架构图见 [`docs/architecture.md`](docs/architecture.md)，选型取舍见 [`docs/tradeoffs.md`](docs/tradeoffs.md)。
+更细的文档：[架构图](docs/architecture.md)、[API 约定](docs/api-conventions.md)、[数据库性能](docs/db-performance.md)、[部署](docs/deploy.md)、[测试报告](docs/test-report.md)、[选型取舍](docs/tradeoffs.md)。
 
 ---
 
@@ -79,11 +79,13 @@ DurableFlow 把每个步骤变成**可持久化、可重试、可恢复、可审
 - LLM 节点：Jinja2 模板、JSON Schema 校验、失败回喂修正、token/成本记录、预算上限。
 - SSE 事件流：按 `Last-Event-ID` 断线续传、15s 心跳、终态 `done`；多实例无需 sticky session。
 - 异步批量 LLM：`asyncio.Semaphore` 控制并发，独立超时/重试，退避时释放并发槽。
+- API 工程：`/api/v1` 版本、`limit/offset` 分页 + `X-Total-Count`、统一错误码、Pydantic 参数校验、API Key 恒定时比较、OpenAPI 文档。
+- 数据库索引：领取队列增加部分索引，20 万行实测 21.083ms → 0.030ms（见 `docs/db-performance.md`）。
 - 观测：结构化 JSON 日志（request_id/run_id/step_id）、Prometheus 指标、可选 OpenTelemetry。
 - API：工作流、运行、步骤、事件、SSE、取消、手动重试、审批、成本、Worker、健康检查。
 - UI：工作流启动、运行列表、步骤时间线、事件、审批按钮。
-- 测试：39 个测试覆盖状态机、重试、上下文、工具权限、记忆、抢占、租约、幂等、Outbox、Agent、API、SSE、异步批量。
-- 压测/演示：`benchmark.py`、`benchmark_async.py`、`load_test.py`、`crash_recovery.py`、`demo.py`、`compare_versions.py`。
+- 测试：45 个测试、76% 覆盖率，覆盖状态机、重试、上下文、工具权限、记忆、抢占、租约、幂等、Outbox、Agent、API v1、SSE、异步批量。
+- 压测/演示：`benchmark.py`、`benchmark_async.py`、`load_test.py`、`db_benchmark.py`、`crash_recovery.py`、`demo.py`、`compare_versions.py`。
 
 ---
 
@@ -166,6 +168,9 @@ python scripts/crash_recovery.py
 
 # 引擎开销压测
 python scripts/benchmark.py --runs 40 --workers 3
+
+# 领取队列索引对比：20 万行，无索引/联合索引/部分索引
+python scripts/db_benchmark.py
 ```
 
 ### SSE 实时事件流
@@ -211,7 +216,8 @@ python scripts/load_test.py --requests 100 --concurrency 20 --timeout 120
 
 ```bash
 conda run --no-capture-output -n durableflow pytest -q
-# 39 passed
+# 45 passed
+pytest -q --cov=app --cov-report=term   # 76%
 ```
 
 覆盖：
@@ -226,8 +232,9 @@ conda run --no-capture-output -n durableflow pytest -q
 - Outbox 成功/失败重试。
 - Agent 工具调用、最终回答、危险工具暂停。
 - API 健康检查、工作流、创建运行、幂等、取消、UI。
+- API v1 路由、旧 `/api` 兼容、分页 `X-Total-Count`、统一错误码、Pydantic 422、API Key 校验。
 - Worker 端到端：demo_pipeline、agent_review + 审批。
-- SSE：事件推送、`Last-Event-ID` 续传、非法游标 400。
+- SSE：事件推送、`Last-Event-ID` 续传、积压超过单批、非法游标 400。
 - 异步批量：并发上限、可重试/不可重试、超时、统计聚合。
 
 ---
@@ -252,9 +259,9 @@ durableflow/
 │   └── templates/index.html    # 无框架 Web UI
 ├── alembic/                    # 初始迁移
 ├── deploy/nginx.conf           # SSE 反向代理示例
-├── scripts/                    # seed / demo / crash_recovery / benchmark / benchmark_async / load_test
-├── tests/                      # 39 个测试
-├── docs/                       # architecture / sse / tradeoffs / interview-notes
+├── scripts/                    # seed / demo / crash_recovery / benchmark / benchmark_async / load_test / db_benchmark
+├── tests/                      # 45 个测试，76% 覆盖率
+├── docs/                       # architecture / api-conventions / db-performance / deploy / sse / tradeoffs / test-report
 ├── docker-compose.yml
 ├── Dockerfile
 ├── prometheus.yml
@@ -273,7 +280,8 @@ durableflow/
 - **UI 是只读时间线**：不做拖拽编排。
 - **成本是估算**：按配置的 1M token 单价计算，不是供应商账单级精确。
 - **Docker Compose 未在本机验证**：Docker Hub 网络受限；本地 conda PostgreSQL 路径已验证。
-- **没有 RBAC**：只有可选 `API_KEY`；企业多租户权限需要再加。
+- **没有 RBAC**：只有可选单 `API_KEY`，没有多租户、权限范围和完整审计日志；企业场景需要再加。
+- **索引收益是合成数据**：20 万行单机、2% 待执行行；真实收益取决于数据分布和缓存，见 `docs/db-performance.md`。
 - **SSE 是数据库轮询**：每连接每秒一次索引查询，适合中小规模；上万连接需要 `LISTEN/NOTIFY` 或 Redis 广播。
 - **异步批量是独立模块**：`app/llm/async_batch.py` 有测试和压测，但还没接成 Worker 的 async 节点；Worker 主链路仍是同步执行。
 - **Nginx 配置未实测**：本机没装 Nginx，`deploy/nginx.conf` 只做了语法/参数设计，没有跑代理链路压测。

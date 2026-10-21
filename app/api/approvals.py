@@ -9,7 +9,7 @@ from app.schemas import ApprovalDecision, ApprovalOut
 from app.services.runs import RunError, decide_approval
 
 router = APIRouter(
-    prefix="/api/approvals",
+    prefix="/approvals",
     tags=["approvals"],
     dependencies=[Depends(require_api_key)],
 )

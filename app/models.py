@@ -13,6 +13,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -94,6 +95,12 @@ class StepRun(Base):
         UniqueConstraint("run_id", "step_name", name="uq_step_run_name"),
         Index("idx_steps_claim", "status", "available_at"),
         Index("idx_steps_lease", "status", "lease_expires_at"),
+        Index(
+            "idx_steps_claim_partial",
+            "available_at",
+            "id",
+            postgresql_where=text("status IN ('PENDING', 'RETRYING')"),
+        ),
     )
 
 

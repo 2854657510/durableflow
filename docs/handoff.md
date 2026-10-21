@@ -14,7 +14,7 @@
 | 数据库 | `durableflow` |
 | 配置文件 | `.env`（已从 `.env.example` 复制，`LLM_PROVIDER=mock`，不花钱） |
 | 数据表 | 已由 `scripts/seed.py` 创建并注册 7 个内置工作流 |
-| 测试 | 39 个，全部通过 |
+| 测试 | 45 个，全部通过，76% 覆盖率 |
 | API | 已启动：http://127.0.0.1:8000 |
 | UI | 已启动：http://127.0.0.1:8000/ui |
 | Worker | 已启动（后台），会处理新运行 |
@@ -30,10 +30,12 @@
 
 | 命令/路径 | 结果 |
 |---|---|
-| `pytest -q` | 39 passed |
+| `pytest -q` | 45 passed，76% 覆盖率 |
 | `curl -N /api/runs/{id}/events/stream` | 收到 7 条事件 + `done`；`Last-Event-ID` 只补发之后的事件 |
 | `python scripts/benchmark_async.py --requests 100 --delay-ms 50 --concurrency 1,4,8,16,32` | 16.03 → 400 req/s，服务 P95 63ms |
 | `python scripts/load_test.py --requests 100 --concurrency 20` | 100/100 成功，107.43 run/s，创建 P95 273ms，端到端 P95 2058ms |
+| `python scripts/db_benchmark.py` | 20 万行：无索引 21.083ms，联合索引 2.869ms，部分索引 0.030ms |
+| `alembic upgrade head`（migrate 库） | 新增 `idx_steps_claim_partial` 成功 |
 | `python scripts/demo.py --workflow agent_review` | 规划 → 审批 → Agent → 审查 → 报告，SUCCEEDED |
 | `python scripts/demo.py --workflow dangerous_agent --goal "Send email to ops@example.com"` | 高风险工具触发审批，通过后继续，SUCCEEDED |
 | `python scripts/demo.py --workflow fail_retry` | 前两次失败，第三次成功 |

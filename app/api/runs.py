@@ -16,6 +16,7 @@ from app.schemas import CostOut, EventOut, RunCreate, RunCreatedOut, RunOut, Ste
 from app.services.runs import (
     RunError,
     cancel_run,
+    count_runs,
     create_run,
     get_cost_breakdown,
     get_events,
@@ -27,12 +28,12 @@ from app.services.workflows import get_workflow
 from app.state_machine import TERMINAL_RUN_STATUSES
 
 router = APIRouter(
-    prefix="/api/runs",
+    prefix="/runs",
     tags=["runs"],
     dependencies=[Depends(require_api_key)],
 )
 start_router = APIRouter(
-    prefix="/api/workflows",
+    prefix="/workflows",
     tags=["runs"],
     dependencies=[Depends(require_api_key)],
 )
@@ -62,11 +63,14 @@ def start_run(
 
 @router.get("", response_model=list[RunOut])
 def read_runs(
+    response: Response,
     limit: int = Query(default=50, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
     status: str | None = None,
     db: Session = Depends(get_db),
 ):
-    return list_runs(db, limit=limit, status=status)
+    response.headers["X-Total-Count"] = str(count_runs(db, status=status))
+    return list_runs(db, limit=limit, status=status, offset=offset)
 
 
 @router.get("/{run_id}", response_model=RunOut)

@@ -6,8 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class WorkflowCreate(BaseModel):
-    name: str
-    version: int = 1
+    name: str = Field(min_length=1, max_length=128)
+    version: int = Field(default=1, ge=1)
     spec: dict
 
 
@@ -22,7 +22,7 @@ class WorkflowOut(BaseModel):
 
 class RunCreate(BaseModel):
     input: dict = Field(default_factory=dict)
-    max_cost: float | None = None
+    max_cost: float | None = Field(default=None, ge=0)
 
 
 class RunOut(BaseModel):
@@ -87,8 +87,8 @@ class ApprovalOut(BaseModel):
 
 
 class ApprovalDecision(BaseModel):
-    decided_by: str = "operator"
-    comment: str | None = None
+    decided_by: str = Field(default="operator", min_length=1, max_length=128)
+    comment: str | None = Field(default=None, max_length=1000)
 
 
 class WorkerOut(BaseModel):

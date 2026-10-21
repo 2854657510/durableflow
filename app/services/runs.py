@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
@@ -35,11 +35,23 @@ def get_run_with_steps(session: Session, run_id: int) -> WorkflowRun | None:
     )
 
 
-def list_runs(session: Session, limit: int = 50, status: str | None = None) -> list[WorkflowRun]:
-    stmt = select(WorkflowRun).order_by(WorkflowRun.id.desc()).limit(limit)
+def list_runs(
+    session: Session,
+    limit: int = 50,
+    status: str | None = None,
+    offset: int = 0,
+) -> list[WorkflowRun]:
+    stmt = select(WorkflowRun).order_by(WorkflowRun.id.desc()).offset(offset).limit(limit)
     if status:
         stmt = stmt.where(WorkflowRun.status == status)
     return list(session.scalars(stmt))
+
+
+def count_runs(session: Session, status: str | None = None) -> int:
+    stmt = select(func.count()).select_from(WorkflowRun)
+    if status:
+        stmt = stmt.where(WorkflowRun.status == status)
+    return int(session.scalar(stmt) or 0)
 
 
 def create_run(

@@ -9,7 +9,7 @@ from app.schemas import WorkflowCreate, WorkflowOut
 from app.services.workflows import WorkflowSpecError, get_workflow, register_workflow
 
 router = APIRouter(
-    prefix="/api/workflows",
+    prefix="/workflows",
     tags=["workflows"],
     dependencies=[Depends(require_api_key)],
 )
